@@ -87,14 +87,28 @@ function drawAndRenderPlayerCards() {
     });
 }
 
-function startGame() {
-  initialize();
+function postBlinds() {
+  playerChips -= 1;
+  computerChips -= 2;
+  pot += 3;
+  render();
+}
+
+// Starting 1 Hand
+function startHand() {
+  postBlinds(); // administration of Blind
   fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1")
     .then((data) => data.json())
     .then(function (response) {
       deckId = response.deck_id;
       drawAndRenderPlayerCards(); // TODO: refactor with async-await
     });
+}
+
+// One game consists of 1 or 2 Hands
+function startGame() {
+  initialize();
+  startHand();
 }
 
 function bet() {
