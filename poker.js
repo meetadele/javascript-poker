@@ -12,9 +12,11 @@ const betButton = document.querySelector(".js-bet-button");
 // program state
 let {
   deckId,
-  playerCards,
+  playerCards, // cards of player
+  computerCards, // cards of the computer (TODO: private? OOP?)
   playerChips, // chips of player
   computerChips, // chips of computer
+  playerBetPlaced, // player already bet
   pot, // cash register
 } = getInitialState();
 
@@ -24,17 +26,20 @@ function getInitialState() {
     playerCards: [],
     playerChips: 100,
     computerChips: 100,
+    playerBetPlaced: false,
     pot: 0,
   };
 }
 
 function initialize() {
-  ({ deckId, playerCards, playerChips, computerChips, pot } =
+  ({ deckId, playerCards, playerChips, computerChips, playerBetPlaced, pot } =
     getInitialState());
 }
 
 function canBet() {
-  return playerCards.length === 2 && playerChips > 0 && pot === 0;
+  return (
+    playerCards.length === 2 && playerChips > 0 && playerBetPlaced === false
+  );
 }
 
 function renderSlider() {
@@ -111,14 +116,47 @@ function startGame() {
   startHand();
 }
 
+function shouldComputerCall() {
+  if (computerCards.length !== 2) return false; // extra security
+  const card1Code = computerCards[0].code; // e.g. 8H, AC, 4H, 9D, 0H (10: 0)
+  const card2Code = computerCards[1].code; // e.g. QH
+  const card1Value = card1Code[0];
+  const card2Value = card2Code[0];
+  const card1Suit = card1Code[1];
+  const card2Suit = card2Code[1];
+
+  return (
+    card1Value === card2Value ||
+    ["0", "J", "Q", "K", "A"].includes(card1Value) ||
+    ["0", "J", "Q", "K", "A"].includes(card2Value) ||
+    (card1Suit === card2Suit &&
+      Math.abs(Number(card1Value) - Number(card2Value)) <= 2)
+  );
+}
+
+function computerMoveAfterBet() {
+  fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=2`)
+    .then((data) => data.json())
+    .then(function (response) {
+      computerCards = response.cards;
+      alert(shouldComputerCall() ? "Call" : "Fold");
+      console.log(computerCards);
+      // render();
+    });
+}
+
 function bet() {
   const betValue = Number(betSlider.value);
   // add betValue to the value of pot
   pot += betValue;
   // deduct playerchips with betValue
   playerChips -= betValue;
+  // state of the game: player did her bet
+  playerBetPlaced = true;
   // re-render
   render();
+  // reaction of opponent gamer, that is the computer now
+  computerMoveAfterBet();
 }
 
 newGameButton.addEventListener("click", startGame);
