@@ -3,6 +3,10 @@ body {
   color: whitesmoke;
 }
 
+img {
+  width: 15%;
+}
+
 .invisible {
   display: none;
 }
