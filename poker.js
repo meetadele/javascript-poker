@@ -156,6 +156,24 @@ function startGame() {
   startHand();
 }
 
+function endHand() {
+  setTimeout(() => {
+    if (computerAction === "Fold") {
+      //TODO: listed type needed for actions
+      playerChips += pot;
+      pot = 0;
+    }
+    deckId = null;
+    playerBets = 0;
+    computerBets = 0;
+    playerCards = [];
+    computerCards = [];
+    computerAction = null;
+    playerBetPlaced = false;
+    render();
+  }, 2000);
+}
+
 function shouldComputerCall(computerCards) {
   if (computerCards.length !== 2) return false; // extra security
   const card1Code = computerCards[0].code; // e.g. 8H, AC, 4H, 9D, 0H (10: 0)
@@ -198,6 +216,7 @@ function computerMoveAfterBet() {
         computerAction = "Fold";
       }
       render();
+      endHand();
     });
 }
 
