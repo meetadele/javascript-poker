@@ -1,14 +1,17 @@
 const newGameButton = document.querySelector(".js-new-game-button");
 const potContainer = document.querySelector(".js-pot-container");
-const betArea = document.querySelector(".js-bet-area");
-const betSlider = document.querySelector("#bet-amount");
-const betSliderValue = document.querySelector(".js-slider-value");
-const betButton = document.querySelector(".js-bet-button");
 
 const playerCardsContainer = document.querySelector(
   ".js-player-cards-container"
 );
 const playerChipContainer = document.querySelector(".js-player-chip-container");
+const betArea = document.querySelector(".js-bet-area");
+const betSlider = document.querySelector("#bet-amount");
+const betSliderValue = document.querySelector(".js-slider-value");
+const betButton = document.querySelector(".js-bet-button");
+const betPotButton = document.querySelector(".js-betpot");
+const bet25Button = document.querySelector(".js-bet25");
+const bet50Button = document.querySelector(".js-bet50");
 
 const computerCardsContainer = document.querySelector(
   ".js-computer-cards-container"
@@ -87,7 +90,7 @@ function renderCardsInContainer(cards, container) {
   let html = "";
 
   for (let card of cards) {
-    html += `<img src="${card.image}" alt="${card.code}" />`;
+    html += `<img src="${card.image}" alt="${card.code}" class="card-image"/>`;
   }
 
   container.innerHTML = html;
@@ -298,10 +301,31 @@ function bet() {
   computerMoveAfterBet();
 }
 
+function getPlayerPotBet() {
+  let difference = computerBets - playerBets;
+  return Math.min(playerChips, pot + 2 * difference);
+}
+
+function setSliderValue(percentage) {
+  let betSize = null;
+  if (typeof percentage === "number") {
+    betSize = Math.floor((playerChips * percentage) / 100);
+  } else {
+    betSize = getPlayerPotBet();
+  }
+
+  betSlider.value = betSize;
+  render();
+}
+
 newGameButton.addEventListener("click", startGame);
+
 betSlider.addEventListener("change", render);
+betSlider.addEventListener("input", render);
+betPotButton.addEventListener("click", () => setSliderValue());
+bet25Button.addEventListener("click", () => setSliderValue(25));
+bet50Button.addEventListener("click", () => setSliderValue(50));
+
 betButton.addEventListener("click", bet);
-
 initialize();
-
 render();
