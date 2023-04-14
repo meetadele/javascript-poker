@@ -68,6 +68,10 @@ function initialize() {
     playerBetPlaced,
     pot,
   } = getInitialState());
+  // State of the Bet slider only fixed in DOM. Let's put it in default state.
+  betSlider.value = 1;
+  // we assume that we are going to render the default values elsewhere
+  // that is why we do not need to render the Slider value here.
 }
 
 function canBet() {
