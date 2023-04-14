@@ -5,6 +5,9 @@ const playerCardsContainer = document.querySelector(
   ".js-player-cards-container"
 );
 const playerChipContainer = document.querySelector(".js-player-chip-container");
+const playerStatusContainer = document.querySelector(
+  ".js-player-status-container"
+);
 const betArea = document.querySelector(".js-bet-area");
 const betSlider = document.querySelector("#bet-amount");
 const betSliderValue = document.querySelector(".js-slider-value");
@@ -19,6 +22,9 @@ const computerCardsContainer = document.querySelector(
 const computerChipContainer = document.querySelector(
   ".js-computer-chip-container"
 );
+const computerStatusContainer = document.querySelector(
+  ".js-computer-status-container"
+);
 const computerActionContainer = document.querySelector(".js-computer-action");
 
 const communityCardsContainer = document.querySelector(".js-community-cards");
@@ -32,8 +38,10 @@ let {
   computerAction, // computer action (call, fold)
   playerChips, // chips of player
   playerBets, // player bet in this round
+  playerStatus, // info about status of player (won, lost, its a draw, fold)
   computerChips, // chips of computer
   computerBets, //  computer bet in this round
+  computerStatus, // info about status of computer (won, lost, its a draw, fold)
   playerBetPlaced, // player already bet
   pot, // cash register
 } = getInitialState();
@@ -47,12 +55,27 @@ function getInitialState() {
     computerAction: null,
     playerChips: 100,
     playerBets: 0,
+    playerStatus: "",
     computerChips: 100,
     computerBets: 0,
+    computerStatus: "",
     playerBetPlaced: false,
     pot: 0,
   };
 }
+
+// Status management TODO: Starting new hand we need to refresh these values
+// deckID = null;
+// playerBets = 0;
+// computerBets = 0;
+// playerCards = [];
+// computerCards = [];
+// computerAction = null;
+// playerBetPlaced = false;
+// playerStatus = "";
+// computerStatus = "";
+// computerAction = "";
+// We reset everything except the status of chips
 
 function initialize() {
   ({
@@ -63,8 +86,10 @@ function initialize() {
     computerAction,
     playerChips,
     playerBets,
+    playerStatus,
     computerChips,
     computerBets,
+    computerStatus,
     playerBetPlaced,
     pot,
   } = getInitialState());
@@ -125,12 +150,18 @@ function renderActions() {
   computerActionContainer.innerHTML = computerAction ?? "";
 }
 
+function renderStatusInfo() {
+  playerStatusContainer.innerHTML = playerStatus;
+  computerStatusContainer.innerHTML = computerStatus;
+}
+
 function render() {
   renderAllCards();
   renderChips();
   renderPot();
   renderSlider();
   renderActions();
+  renderStatusInfo();
 }
 
 async function drawPlayerCards() {
@@ -174,24 +205,17 @@ function endHand(winner = null) {
     if (computerAction === ACTIONS.Fold) {
       playerChips += pot;
       pot = 0;
-    } else if (winner === WINNER.Player) {
+    } else if (winner === STATUS.Player) {
       playerChips += pot;
       pot = 0;
-    } else if (winner === WINNER.Computer) {
+    } else if (winner === STATUS.Computer) {
       computerChips += pot;
       pot = 0;
-    } else if (winner === WINNER.Draw) {
+    } else if (winner === STATUS.Draw) {
       playerChips += playerBets;
       computerChips += computerBets;
       pot = 0;
     }
-    deckId = null;
-    playerBets = 0;
-    computerBets = 0;
-    playerCards = [];
-    computerCards = [];
-    computerAction = null;
-    playerBetPlaced = false;
     render();
   }, 2000);
 }
@@ -231,12 +255,12 @@ async function getWinner() {
   const response = await data.json();
   const winners = response.winners;
   if (winners.length === 2) {
-    return WINNER.Draw;
+    return STATUS.Draw;
   } else if (winners[0].cards === pc0) {
     //Player is the winner
-    return WINNER.Player;
+    return STATUS.Player;
   } else {
-    return WINNER.Computer;
+    return STATUS.Computer;
   }
 }
 
@@ -282,9 +306,18 @@ async function computerMoveAfterBet() {
     computerCards = response.cards;
     render();
     const winner = await showdown();
-    console.log(winner);
+    if (winner === STATUS.Player) {
+      playerStatus = STATUS.Player;
+    } else if (winner === STATUS.Computer) {
+      computerStatus = STATUS.Computer;
+    } else if (winner === STATUS.Draw) {
+      playerStatus = STATUS.Draw;
+      computerStatus = STATUS.Draw;
+    }
     endHand(winner);
   } else {
+    // Computer Folded
+    playerStatus = STATUS.Player;
     render();
     endHand();
   }
