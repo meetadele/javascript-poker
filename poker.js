@@ -44,6 +44,7 @@ let {
   computerStatus, // info about status of computer (won, lost, its a draw, fold)
   playerBetPlaced, // player already bet
   pot, // cash register
+  timeoutIds, // setTimeout ID list
 } = getInitialState();
 
 function getInitialState() {
@@ -61,6 +62,7 @@ function getInitialState() {
     computerStatus: "",
     playerBetPlaced: false,
     pot: 0,
+    timeoutIds: [],
   };
 }
 
@@ -78,6 +80,9 @@ function getInitialState() {
 // We reset everything except the status of chips
 
 function initialize() {
+  for (let id of timeoutIds) {
+    clearTimeoutId(id);
+  }
   ({
     deckId,
     playerCards,
@@ -92,6 +97,7 @@ function initialize() {
     computerStatus,
     playerBetPlaced,
     pot,
+    timeoutIds,
   } = getInitialState());
   // State of the Bet slider only fixed in DOM. Let's put it in default state.
   betSlider.value = 1;
@@ -201,7 +207,7 @@ function startGame() {
 }
 
 function endHand(winner = null) {
-  setTimeout(() => {
+  const id = setTimeout(() => {
     if (computerAction === ACTIONS.Fold) {
       playerChips += pot;
       pot = 0;
@@ -218,6 +224,7 @@ function endHand(winner = null) {
     }
     render();
   }, 2000);
+  timeoutIds.push(id);
 }
 
 function shouldComputerCall(computerCards) {
