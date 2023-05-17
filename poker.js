@@ -43,9 +43,12 @@ let {
   computerBets, //  computer bet in this round
   computerStatus, // info about status of computer (won, lost, its a draw, fold)
   playerBetPlaced, // player already bet
-  pot, // cash register
   timeoutIds, // setTimeout ID list
 } = getInitialState();
+
+function getPot() {
+  return playerBets + computerBets;
+}
 
 function getInitialState() {
   return {
@@ -57,11 +60,10 @@ function getInitialState() {
     playerChips: 100,
     playerBets: 0,
     playerStatus: "",
-    computerChips: 100,
+    computerChips: 50,
     computerBets: 0,
     computerStatus: "",
     playerBetPlaced: false,
-    pot: 0,
     timeoutIds: [],
   };
 }
@@ -96,7 +98,6 @@ function initialize() {
     computerBets,
     computerStatus,
     playerBetPlaced,
-    pot,
     timeoutIds,
   } = getInitialState());
   // State of the Bet slider only fixed in DOM. Let's put it in default state.
@@ -148,7 +149,7 @@ function renderChips() {
 
 function renderPot() {
   potContainer.innerHTML = `
-    <div class="chip-count">Pot: ${pot} </div>
+    <div class="chip-count">Pot: ${getPot()} </div>
     `;
 }
 
@@ -184,7 +185,6 @@ function postBlinds() {
   playerBets += 1;
   computerChips -= 2;
   computerBets += 2;
-  pot += 3;
   render();
 }
 
@@ -208,20 +208,16 @@ function startGame() {
 
 function endHand(winner = null) {
   const id = setTimeout(() => {
-    if (computerAction === ACTIONS.Fold) {
-      playerChips += pot;
-      pot = 0;
-    } else if (winner === STATUS.Player) {
-      playerChips += pot;
-      pot = 0;
+    if (computerAction === ACTIONS.Fold || winner === STATUS.Player) {
+      playerChips += getPot();
     } else if (winner === STATUS.Computer) {
-      computerChips += pot;
-      pot = 0;
-    } else if (winner === STATUS.Draw) {
+      computerChips += getPot();
+    } /*if (winner === STATUS.Draw) */ else {
       playerChips += playerBets;
       computerChips += computerBets;
-      pot = 0;
-    }
+    } // no other options here
+    playerBets = 0;
+    computerBets = 0;
     render();
   }, 2000);
   timeoutIds.push(id);
@@ -288,7 +284,7 @@ async function computerMoveAfterBet() {
   );
   const response = await data.json();
 
-  if (pot === 4) {
+  if (getPot() === 4) {
     computerAction = ACTIONS.Check;
   } else if (shouldComputerCall(response.cards)) {
     computerAction = ACTIONS.Call;
@@ -303,10 +299,14 @@ async function computerMoveAfterBet() {
     // Bet + 2 = Pot
     // computer already put in 2 chips as BlindBet so it has to put in Bet - 2
     // Bet - 2 = Pot - 4
+    if (playerBets > computerChips + computerBets) {
+      let chipsToReturnToPlayer = playerBets - computerChips - computerBets;
+      playerBets -= chipsToReturnToPlayer;
+      playerChips += chipsToReturnToPlayer;
+    }
     const difference = playerBets - computerBets;
     computerChips -= difference;
     computerBets += difference;
-    pot += difference;
   }
 
   if (computerAction === ACTIONS.Check || computerAction == ACTIONS.Call) {
@@ -332,8 +332,6 @@ async function computerMoveAfterBet() {
 
 function bet() {
   const betValue = Number(betSlider.value);
-  // add betValue to the value of pot
-  pot += betValue;
   // deduct playerchips with betValue
   playerChips -= betValue;
   // state of the game: player did her bet
@@ -347,7 +345,7 @@ function bet() {
 
 function getPlayerPotBet() {
   let difference = computerBets - playerBets;
-  return Math.min(playerChips, pot + 2 * difference);
+  return Math.min(playerChips, getPot() + 2 * difference);
 }
 
 function setSliderValue(percentage) {
